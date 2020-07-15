@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.appdynamics.saaseng</groupId>
+    <artifactId>operator-test</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <properties>
+        <maven.compile.source>1.8</maven.compile.source>
+        <maven.compile.target>1.8</maven.compile.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+            <version>4.10.2</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>
+                                        org.appdynamics.saaseng.Main
+                                    </mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+                <plugin>
+                    <groupId>org.eclipse.jkube</groupId>
+                    <artifactId>kubernetes-maven-plugin</artifactId>
+                    <version>1.0.0-alpha-4</version>
+                <configuration>
+                    <images>
+                        <!-- A single's image configuration -->
+                        <image>
+                            <name>sumukhballal/operator-test:${project.version}</name>
+                            <alias>operator-test</alias>
+                            <build>
+                                <from>openjdk:latest</from>
+                                <assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                    <mode>dir</mode>
+                                    <inline>
+                                        <id>copy-jar-with-deps</id>
+                                        <files>
+                                            <file>
+                                                <source>
+                                                    /Users/suballal/Sumukh/Summer2020/Docker/operator-test/target/operator-test-1.0-SNAPSHOT-jar-with-dependencies.jar
+                                                </source>
+                                                <outputDirectory>maven</outputDirectory>
+                                            </file>
+                                        </files>
+                                    </inline>
+                                </assembly>
+                                <cmd>java -jar /maven/maven/${project.name}-${project.version}-jar-with-dependencies.jar</cmd>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+
+                <!-- Connect k8s:resource, k8s:build and k8s:helm to lifecycle phases -->
+                <executions>
+                    <execution>
+                        <id>jkube</id>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>resource</goal>
+                            <goal>push</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
