@@ -65,27 +65,39 @@ public class Main {
             logger.log(Level.SEVERE, "Client Exception : {}"+ e.getMessage());
         }
     }
-
+    
+    public static Subject buildSubject(String namespace) {
+        return new SubjectBuilder()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ServiceAccount")
+                    .withName("default")
+                    .withNamespace(namespace)
+                    .build();
+    }
+    
+    public static RoleDef buildRoleDef(){
+        return new RoleRefBuilder()
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("cluster-admin")
+                    .build();
+    }
+    
+    public static ClusterRoleBinding buildClusterRoleBinding(String namespace) {
+        return new ClusterRoleBindingBuilder()
+                    .withNewMetadata()
+                    .withName("default-pod")
+                    .endMetadata()
+                    .addToSubjects(0, buildSubject(namespace))
+                    .withRoleRef(buildRoleDef())
+                    .build();
+    }
+    
     private void createClusterRoleBinding(KubernetesClient client, String namespace) {
-        ClusterRoleBinding kubernetesClusterRoleBinding = new ClusterRoleBindingBuilder()
-                .withNewMetadata()
-                .withName("default-pod")
-                .endMetadata()
-                .addToSubjects(0, new SubjectBuilder()
-                        .withApiGroup("rbac.authorization.k8s.io")
-                        .withKind("ServiceAccount")
-                        .withName("default")
-                        .withNamespace(namespace)
-                        .build()
-                )
-                .withRoleRef(new RoleRefBuilder()
-                        .withApiGroup("rbac.authorization.k8s.io")
-                        .withKind("ClusterRole")
-                        .withName("cluster-admin")
-                        .build()
-                ).build();
-
-        client.rbac().clusterRoleBindings().create(kubernetesClusterRoleBinding);
+        client
+            .rbac()
+            .clusterRoleBindings()
+            .create(buildClusterRoleBinding(namespace));
 
 
     }
